@@ -80,7 +80,7 @@ public class FPSController : MonoBehaviour
         // Walking sound logic
         bool moving = Mathf.Abs(h) > 0.01f || Mathf.Abs(v) > 0.01f;
 
-        if (moving)
+        if (moving && Input.GetButton("Jump") != true)
         {
             if (!walkingSound.isPlaying)
                 walkingSound.Play();
