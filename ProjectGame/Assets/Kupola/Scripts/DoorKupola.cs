@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DoorTrigger : MonoBehaviour
+public class DoorKupola : MonoBehaviour
 {
     public Animator doorAnimator;
     public Collider playerCollider;
@@ -10,7 +10,7 @@ public class DoorTrigger : MonoBehaviour
 
     void Start()
     {
-        doorAnimator.Play("door_2_closed");
+        doorAnimator.Play("DoorClosed");
     }
 
     void OnTriggerEnter(Collider other)
@@ -19,7 +19,7 @@ public class DoorTrigger : MonoBehaviour
         {
             playerInside = true;
             openAnimationFinished = false;
-            doorAnimator.Play("door_2_open");
+            doorAnimator.Play("DoorOpen");
         }
     }
 
@@ -30,23 +30,23 @@ public class DoorTrigger : MonoBehaviour
         // After open animation finishes, switch to opened loop
         if (playerInside && !openAnimationFinished)
         {
-            if (state.IsName("door_2_open") && state.normalizedTime >= 1f)
+            if (state.IsName("DoorOpen") && state.normalizedTime >= 1f)
             {
-                doorAnimator.Play("door_2_opened");
+                doorAnimator.Play("DoorOpened");
                 openAnimationFinished = true;
             }
         }
 
         // Ensure opened animation keeps playing while player stays
-        if (playerInside && openAnimationFinished && !state.IsName("door_2_opened"))
+        if (playerInside && openAnimationFinished && !state.IsName("DoorOpened"))
         {
-            doorAnimator.Play("door_2_opened");
+            doorAnimator.Play("DoorOpened");
         }
 
         // When player leaves, finish closing cycle
-        if (!playerInside && state.IsName("door_2_close") && state.normalizedTime >= 1f)
+        if (!playerInside && state.IsName("DoorClose") && state.normalizedTime >= 1f)
         {
-            doorAnimator.Play("door_2_closed");
+            doorAnimator.Play("DoorClosed");
         }
     }
 
@@ -55,7 +55,7 @@ public class DoorTrigger : MonoBehaviour
         if (other == playerCollider)
         {
             playerInside = false;
-            doorAnimator.Play("door_2_close");
+            doorAnimator.Play("DoorClose");
         }
     }
 }
