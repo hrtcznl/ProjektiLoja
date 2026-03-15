@@ -8,20 +8,24 @@ public class FloatingCompanion : MonoBehaviour
     public Transform player;
     public Transform cameraTransform;
     public DialogueUI dialogueUI;
-	public FPSController controller;
+    public FPSController controller;
 
     [Header("Hover Settings")]
     public float hoverHeight = 1.3f;         // Height above ground
     public float followDistance = 2.5f;      // Desired distance behind player
     public float stopDistance = 4.5f;        // Minimum distance to player
-    public float moveSpeed = 15f;             // Max movement speed
-    public float rotationSpeed = 15f;         // How fast it rotates to face player
+    public float moveSpeed = 15f;            // Max movement speed
+    public float rotationSpeed = 15f;        // How fast it rotates to face player
     public float modelForwardCorrection = 180f; // Fix model facing
 
     [Header("Interaction")]
     public KeyCode interactKey = KeyCode.E;
     public float interactDistance = 3f;
     public LayerMask companionLayer;
+
+    [Header("External Animator")]
+    public Animator targetAnimator; // Drag the other object's animator here in the Inspector
+    private bool animatorEnabled = false; // Track if animator has been enabled
 
     [Header("Dialogue")]
     public string currentDialogueKey = "default";
@@ -87,20 +91,13 @@ public class FloatingCompanion : MonoBehaviour
         // Target position behind the player
         Vector3 targetPos = player.position - player.forward * followDistance;
 
-        // Hover over ground using raycast
-        Ray groundRay = new Ray(targetPos + Vector3.up * 5f, Vector3.down);
-        if (Physics.Raycast(groundRay, out RaycastHit hitInfo, 20f))
-        {
-            targetPos.y = Mathf.Max(hitInfo.point.y + hoverHeight, player.position.y + hoverHeight);
-        }
-        else
-        {
-            targetPos.y = player.position.y + hoverHeight;
-        }
+        // Set hover height to player's Y position
+        targetPos.y = player.position.y + hoverHeight;
 
         // Compute direction
         Vector3 direction = targetPos - transform.position;
         float distance = direction.magnitude;
+		float moveSpeed = 15f * distance * distance * distance * distance * distance * distance * distance * 0.00000005f;
 
         // Move only if beyond stopDistance to avoid clipping into player
         if (distance > stopDistance)
@@ -130,15 +127,22 @@ public class FloatingCompanion : MonoBehaviour
         {
             if (hit.collider != null && hit.collider.transform == transform)
             {
-                if (dialogueUI != null && dialogues.ContainsKey(currentDialogueKey)){
+                // Enable target animator on first interaction
+                if (!animatorEnabled && targetAnimator != null)
+                {
+                    targetAnimator.enabled = true;
+                    animatorEnabled = true;
+                }
+
+                if (dialogueUI != null && dialogues.ContainsKey(currentDialogueKey))
+                {
                     StartDialogue();
-					Cursor.lockState = CursorLockMode.None;
-					Cursor.visible = true;
-					controller.canMove = false;
-				}
-				
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                    controller.canMove = false;
+                }
             }
-		}
+        }
     }
 
     void StartDialogue()
@@ -156,9 +160,9 @@ public class FloatingCompanion : MonoBehaviour
         {
             dialogueUI?.Hide();
             isInDialogue = false;
-			Cursor.lockState = CursorLockMode.Locked;
-			Cursor.visible = false;
-			controller.canMove = true;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            controller.canMove = true;
         }
     }
 
