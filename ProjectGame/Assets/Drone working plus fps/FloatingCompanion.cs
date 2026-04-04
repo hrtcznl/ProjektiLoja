@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using SmoothShakeFree;
 
 [RequireComponent(typeof(Rigidbody))]
 public class FloatingCompanion : MonoBehaviour
@@ -9,6 +10,9 @@ public class FloatingCompanion : MonoBehaviour
     public Transform cameraTransform;
     public DialogueUI dialogueUI;
     public FPSController controller;
+
+    [Header("Shake")]
+    [SerializeField] private SmoothShake shake; // <-- drag child SmoothShake here
 
     [Header("Hover Settings")]
     public float hoverHeight = 1.3f;         // Height above ground
@@ -163,6 +167,9 @@ public class FloatingCompanion : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             controller.canMove = true;
+
+            // ✅ START SHAKE HERE
+            shake?.StartShake();
         }
     }
 

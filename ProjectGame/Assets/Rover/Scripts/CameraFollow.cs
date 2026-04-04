@@ -48,7 +48,6 @@ namespace VehicleBehaviour.Utils
             // Position behind the car
             Vector3 desiredPos = target.position + target.TransformDirection(offset);
 
-            // Look slightly above the car
             Vector3 lookPos = target.position + new Vector3(0, lookHeight, 0);
             transform.LookAt(lookPos);
 
