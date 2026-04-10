@@ -8,9 +8,14 @@ public class DoorKupola : MonoBehaviour
     private bool playerInside = false;
     private bool openAnimationFinished = false;
 
+    private Collider doorCollider;
+
     void Start()
     {
         doorAnimator.Play("DoorClosed");
+
+        // Get this object's collider
+        doorCollider = GetComponent<Collider>();
     }
 
     void OnTriggerEnter(Collider other)
@@ -20,6 +25,10 @@ public class DoorKupola : MonoBehaviour
             playerInside = true;
             openAnimationFinished = false;
             doorAnimator.Play("DoorOpen");
+
+            // Ensure collider is enabled when player enters
+            if (doorCollider != null)
+                doorCollider.enabled = true;
         }
     }
 
@@ -56,6 +65,10 @@ public class DoorKupola : MonoBehaviour
         {
             playerInside = false;
             doorAnimator.Play("DoorClose");
+
+            // Disable this object's collider when player leaves
+            if (doorCollider != null)
+                doorCollider.enabled = false;
         }
     }
 }
