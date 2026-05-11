@@ -12,6 +12,13 @@ public class PuzzleManager : MonoBehaviour
     public Renderer displayRenderer;
     public PuzzleOption[] puzzleOptions;
 
+    [Header("Indicators")]
+    public GameObject rightIndicator;
+    public GameObject wrongIndicator;
+    public GameObject alreadySolvedIndicator;
+    public float indicatorDisplayTime = 2f;
+
+    private Coroutine indicatorCoroutine;
     private int currentCorrectButtonID;
     private int currentIndex;
     private bool puzzleSolved = false;
@@ -33,6 +40,7 @@ public class PuzzleManager : MonoBehaviour
         }
 
         ShowRandomPuzzle();
+        HideAllIndicators();
     }
 
     void ShowRandomPuzzle()
@@ -66,6 +74,7 @@ public class PuzzleManager : MonoBehaviour
         if (puzzleSolved)
         {
             Debug.Log("Puzzle already solved.");
+            ShowIndicator(alreadySolvedIndicator);
             return;
         }
 
@@ -73,10 +82,47 @@ public class PuzzleManager : MonoBehaviour
         {
             Debug.Log("You are right!");
             puzzleSolved = true;
+            ShowIndicator(rightIndicator);
         }
         else
         {
             Debug.Log("Wrong answer!");
+            ShowIndicator(wrongIndicator);
         }
+    }
+
+    void HideAllIndicators()
+    {
+        if (rightIndicator != null)
+            rightIndicator.SetActive(false);
+
+        if (wrongIndicator != null)
+            wrongIndicator.SetActive(false);
+
+        if (alreadySolvedIndicator != null)
+            alreadySolvedIndicator.SetActive(false);
+    }
+
+    void ShowIndicator(GameObject indicator)
+    {
+        HideAllIndicators();
+
+        if (indicator == null)
+            return;
+
+        indicator.SetActive(true);
+
+        if (indicatorCoroutine != null)
+            StopCoroutine(indicatorCoroutine);
+
+        indicatorCoroutine = StartCoroutine(HideIndicatorAfterDelay(indicator));
+    }
+
+    System.Collections.IEnumerator HideIndicatorAfterDelay(GameObject indicator)
+    {
+        yield return new WaitForSeconds(indicatorDisplayTime);
+
+        if (indicator != null)
+            indicator.SetActive(false);
     }
 }

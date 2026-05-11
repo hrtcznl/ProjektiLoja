@@ -35,6 +35,7 @@ public class FloatingCompanion : MonoBehaviour
     public KeyCode interactKey = KeyCode.E;
     public float interactDistance = 3f;
     public LayerMask companionLayer;
+    public GameObject interactIndicator; // Object to show "Press E" or similar
 
     [Header("External Animator")]
     public Animator targetAnimator; // Drag the other object's animator here in the Inspector
@@ -60,6 +61,9 @@ public class FloatingCompanion : MonoBehaviour
         if (cameraTransform == null)
             cameraTransform = Camera.main?.transform;
 
+        if (interactIndicator != null)
+            interactIndicator.SetActive(false);
+
         InitializeDialogue();
         SetupButtonListeners();
     }
@@ -67,6 +71,11 @@ public class FloatingCompanion : MonoBehaviour
     void Update()
     {
         HandleActivation();
+
+        if (interactIndicator != null)
+        {
+            interactIndicator.SetActive(!isInDialogue && CanInteract());
+        }
 
         if (!isActive || player == null)
             return;
@@ -98,6 +107,16 @@ public class FloatingCompanion : MonoBehaviour
                 }
             }
         }
+    }
+
+    bool CanInteract()
+    {
+        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, companionLayer))
+        {
+            return hit.collider != null && hit.collider.transform == transform;
+        }
+        return false;
     }
 
     void FollowPlayer()
@@ -187,6 +206,7 @@ public class FloatingCompanion : MonoBehaviour
         {
             dialogueUI?.Hide();
             isInDialogue = false;
+            currentDialogueKey = "default";
             EnableTaskButtons(false);
             EnableBackButton(false);
             Cursor.lockState = CursorLockMode.Locked;
@@ -206,7 +226,7 @@ public class FloatingCompanion : MonoBehaviour
             { "task_1", "Read left to right: the first two colors are digits, the third color tells how many zeros to add (multiplier), and the last band shows accuracy in percentage. Refer to the color chart in the energy room." },
             { "task_2", "Add up resistance differently depending on how they are connected: in series, you just add all resistor values; in parallel, you add the reciprocals (1/R) of each resistor, then take the reciprocal of that result." },
             { "task_3", "Start from 32 bits: the CIDR number tells how many bits are set to 1, so fill that many 1s from left to right, then split into 4 groups of 8 bits and convert each group to decimal to get the subnet mask." },
-            { "task_4", "Start from the inputs and go step by step through the circuit: a NOT gate flips the value, an AND gate outputs 1 only if all its inputs are 1, and an OR gate outputs 1 if at least one input is 1. Follow the connections until you reach the final output." },
+            { "task_4", "Start from the inputs and go step by step through the circuit: a NOT gate flips the value, an AND gate outputs 1 only if all its inputs are 1, and an OR gate outputs 1 if at least one input is 1. Follow the connections to the output." },
             { "task_5", "Read from right to left: each position is a power of 2 (1, 2, 4, 8, 16, 32, 64, 128), and you add up the values where the bit is 1 to get the decimal number." }
         };
     }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -21,6 +22,13 @@ public class TextEntryPuzzleManager : MonoBehaviour
     public TMP_Text resultText;
     public TMP_Text promptText;
 
+    [Header("Indicators")]
+    public GameObject rightIndicator;
+    public GameObject wrongIndicator;
+    public GameObject alreadySolvedIndicator;
+    public float indicatorDisplayTime = 2f;
+
+    private Coroutine indicatorCoroutine;
     private string currentCorrectAnswer = "";
     private string currentInput = "";
     private bool puzzleSolved = false;
@@ -47,6 +55,7 @@ public class TextEntryPuzzleManager : MonoBehaviour
         }
 
         ShowRandomPuzzle();
+        HideAllIndicators();
         ShowPromptOnly();
     }
 
@@ -125,6 +134,7 @@ public class TextEntryPuzzleManager : MonoBehaviour
         if (puzzleSolved)
         {
             ShowResultOnly("Puzzle solved");
+            ShowIndicator(alreadySolvedIndicator);
             return;
         }
 
@@ -160,12 +170,49 @@ public class TextEntryPuzzleManager : MonoBehaviour
             puzzleSolved = true;
             ShowResultOnly("You are right!");
             Debug.Log("You are right!");
+            ShowIndicator(rightIndicator);
         }
         else
         {
             ShowResultOnly("Wrong answer!");
             Debug.Log("Wrong answer!");
+            ShowIndicator(wrongIndicator);
         }
+    }
+
+    void HideAllIndicators()
+    {
+        if (rightIndicator != null)
+            rightIndicator.SetActive(false);
+
+        if (wrongIndicator != null)
+            wrongIndicator.SetActive(false);
+
+        if (alreadySolvedIndicator != null)
+            alreadySolvedIndicator.SetActive(false);
+    }
+
+    void ShowIndicator(GameObject indicator)
+    {
+        HideAllIndicators();
+
+        if (indicator == null)
+            return;
+
+        indicator.SetActive(true);
+
+        if (indicatorCoroutine != null)
+            StopCoroutine(indicatorCoroutine);
+
+        indicatorCoroutine = StartCoroutine(HideIndicatorAfterDelay(indicator));
+    }
+
+    IEnumerator HideIndicatorAfterDelay(GameObject indicator)
+    {
+        yield return new WaitForSeconds(indicatorDisplayTime);
+
+        if (indicator != null)
+            indicator.SetActive(false);
     }
 
     string CleanText(string text)
