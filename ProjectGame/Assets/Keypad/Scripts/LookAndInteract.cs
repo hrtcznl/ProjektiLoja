@@ -14,6 +14,16 @@ public class LookAndInteract : MonoBehaviour
     private void Awake()
     {
         cam = Camera.main;
+        if (cam == null)
+            cam = FindObjectOfType<Camera>();
+
+        if (cam == null)
+        {
+            Debug.LogWarning("LookAndInteract: No camera found in scene. Disabling script.");
+            enabled = false;
+            return;
+        }
+
         if (targetObject != null)
             targetCollider = targetObject.GetComponent<BoxCollider>();
     }
@@ -23,6 +33,9 @@ public class LookAndInteract : MonoBehaviour
         bool lookingAtThis = false;
 
         // Raycast from center of screen
+        if (cam == null)
+            return;
+
         var ray = cam.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0));
 
         if (Physics.Raycast(ray, out var hit, interactDistance))

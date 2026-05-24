@@ -23,6 +23,9 @@ public class FPSController : MonoBehaviour
     public float jumpPower = 7f;
     public float gravity = 10f;
     public bool canMove = true;
+    public GameObject animatedObject;
+    public Animator animatorToDisableOnFinish;
+    public GameObject objectToEnableOnFinish;
 
     [Header("Audio")]
     public AudioSource walkingSound;
@@ -32,6 +35,11 @@ public class FPSController : MonoBehaviour
     private CharacterController characterController;
     private Vector3 moveDirection = Vector3.zero;
     private float rotationX = 0;
+
+    private Animator animatedObjectAnimator;
+    private Animation animatedObjectLegacy;
+    private bool watchingAnimation;
+    private int watchingStateHash;
 
     private float sensitivity01 = 1f;
 
@@ -98,8 +106,124 @@ public class FPSController : MonoBehaviour
             sensitivitySlider2.value = v;
     }
 
+    void CacheAnimatedObjectComponents()
+    {
+        if (animatedObject == null)
+            return;
+
+        if (animatedObjectAnimator == null)
+            animatedObjectAnimator = animatedObject.GetComponent<Animator>();
+
+        if (animatedObjectLegacy == null)
+            animatedObjectLegacy = animatedObject.GetComponent<Animation>();
+    }
+
+    bool CheckAnimatedObjectFinished()
+    {
+        if (animatedObjectAnimator != null)
+            return CheckAnimatorFinished();
+
+        if (animatedObjectLegacy != null)
+            return CheckLegacyAnimationFinished();
+
+        return false;
+    }
+
+    bool CheckAnimatorFinished()
+    {
+        if (!animatedObjectAnimator.isInitialized)
+            return false;
+
+        if (animatedObjectAnimator.IsInTransition(0))
+            return false;
+
+        AnimatorStateInfo state = animatedObjectAnimator.GetCurrentAnimatorStateInfo(0);
+        if (state.length <= 0f)
+            return false;
+
+        if (!watchingAnimation)
+        {
+            if (state.normalizedTime < 1f)
+            {
+                watchingAnimation = true;
+                watchingStateHash = state.fullPathHash;
+            }
+
+            return false;
+        }
+
+        if (state.fullPathHash != watchingStateHash)
+        {
+            watchingAnimation = false;
+            return true;
+        }
+
+        if (state.normalizedTime >= 1f && !state.loop)
+        {
+            watchingAnimation = false;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool CheckLegacyAnimationFinished()
+    {
+        if (animatedObjectLegacy.isPlaying)
+        {
+            watchingAnimation = true;
+            return false;
+        }
+
+        if (watchingAnimation)
+        {
+            watchingAnimation = false;
+            return true;
+        }
+
+        return false;
+    }
+
+    void HandleAnimationComplete()
+    {
+        if (animatorToDisableOnFinish != null && animatorToDisableOnFinish.enabled)
+            animatorToDisableOnFinish.enabled = false;
+
+        if (objectToEnableOnFinish != null && !objectToEnableOnFinish.activeSelf)
+            objectToEnableOnFinish.SetActive(true);
+    }
+
     void Update()
     {
+        CacheAnimatedObjectComponents();
+
+        if (!canMove)
+        {
+            if (animatedObject != null && CheckAnimatedObjectFinished())
+            {
+                canMove = true;
+                HandleAnimationComplete();
+            }
+
+            if (walkingSound != null)
+                walkingSound.Stop();
+
+            moveDirection.x = 0f;
+            moveDirection.z = 0f;
+
+            if (!characterController.isGrounded)
+            {
+                moveDirection.y -= gravity * Time.deltaTime;
+            }
+            else
+            {
+                moveDirection.y = 0f;
+            }
+
+            characterController.Move(moveDirection * Time.deltaTime);
+            return;
+        }
+
         #region Movement
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
@@ -110,8 +234,8 @@ public class FPSController : MonoBehaviour
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
         float speed = isRunning ? runSpeed : walkSpeed;
 
-        float curSpeedX = canMove ? speed * v : 0;
-        float curSpeedY = canMove ? speed * h : 0;
+        float curSpeedX = speed * v;
+        float curSpeedY = speed * h;
 
         float movementDirectionY = moveDirection.y;
 
@@ -132,7 +256,7 @@ public class FPSController : MonoBehaviour
         #endregion
 
         #region Jumping
-        if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
+        if (Input.GetButton("Jump") && characterController.isGrounded)
         {
             moveDirection.y = jumpPower;
         }
@@ -150,17 +274,14 @@ public class FPSController : MonoBehaviour
         #region Rotation
         characterController.Move(moveDirection * Time.deltaTime);
 
-        if (canMove)
-        {
-            float t = Mathf.Pow(sensitivity01, 1.8f);
-            float currentLookSpeed = Mathf.Lerp(minLookSpeed, maxLookSpeed, t);
+        float t = Mathf.Pow(sensitivity01, 1.8f);
+        float currentLookSpeed = Mathf.Lerp(minLookSpeed, maxLookSpeed, t);
 
-            rotationX += -Input.GetAxis("Mouse Y") * currentLookSpeed;
-            rotationX = Mathf.Clamp(rotationX, -lookXLimit, lookXLimit);
+        rotationX += -Input.GetAxis("Mouse Y") * currentLookSpeed;
+        rotationX = Mathf.Clamp(rotationX, -lookXLimit, lookXLimit);
 
-            playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
-            transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * currentLookSpeed, 0);
-        }
+        playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+        transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * currentLookSpeed, 0);
         #endregion
     }
 }

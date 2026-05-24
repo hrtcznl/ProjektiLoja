@@ -18,6 +18,9 @@ public class PuzzleManager : MonoBehaviour
     public GameObject alreadySolvedIndicator;
     public float indicatorDisplayTime = 2f;
 
+    [Header("Success")]
+    public Collider successCollider;
+
     private Coroutine indicatorCoroutine;
     private int currentCorrectButtonID;
     private int currentIndex;
@@ -66,6 +69,9 @@ public class PuzzleManager : MonoBehaviour
 
         currentCorrectButtonID = puzzleOptions[currentIndex].correctButtonID;
 
+        if (successCollider != null)
+            successCollider.enabled = false;
+
         Debug.Log("Correct button is: " + currentCorrectButtonID);
     }
 
@@ -83,6 +89,9 @@ public class PuzzleManager : MonoBehaviour
             Debug.Log("You are right!");
             puzzleSolved = true;
             ShowIndicator(rightIndicator);
+
+            if (successCollider != null)
+                successCollider.enabled = true;
         }
         else
         {

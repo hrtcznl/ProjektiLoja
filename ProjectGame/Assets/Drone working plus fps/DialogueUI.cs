@@ -6,6 +6,7 @@ public class DialogueUI : MonoBehaviour
     [Header("UI References (optional)")]
     public GameObject dialoguePanel;
     public TMP_Text dialogueText;
+    public FPSController playerController;
 
     private bool isOpen = false;
 
@@ -28,6 +29,9 @@ public class DialogueUI : MonoBehaviour
                 Debug.LogError("DialogueText not assigned or found!");
         }
 
+        if (playerController == null)
+            playerController = FindObjectOfType<FPSController>();
+
         if (dialoguePanel != null)
             dialoguePanel.SetActive(false);
     }
@@ -41,7 +45,8 @@ public class DialogueUI : MonoBehaviour
             dialoguePanel.SetActive(true);
 
         isOpen = true;
-        Time.timeScale = 0f;
+        if (playerController != null)
+            playerController.canMove = false;
     }
 
     public void Hide()
@@ -50,7 +55,8 @@ public class DialogueUI : MonoBehaviour
             dialoguePanel.SetActive(false);
 
         isOpen = false;
-        Time.timeScale = 1f;
+        if (playerController != null)
+            playerController.canMove = true;
     }
 
     public bool IsOpen()

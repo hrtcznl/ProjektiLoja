@@ -7,6 +7,7 @@ public class CameraInteractor : MonoBehaviour
     {
         public GameObject worldObject; // object in scene
         public GameObject hudObject;   // HUD symbol to enable
+        public bool requireSecondDialogue = false; // if true, only enable after companion second dialogue
     }
 
     [Header("Camera")]
@@ -21,6 +22,9 @@ public class CameraInteractor : MonoBehaviour
     [Header("Objects")]
     public InteractableEntry[] interactables;
 
+    [Header("Companion")]
+    public FloatingCompanion floatingCompanion;
+
     private GameObject currentTarget;
     private InteractableEntry currentEntry;
 
@@ -28,6 +32,9 @@ public class CameraInteractor : MonoBehaviour
     {
         if (cam == null)
             cam = Camera.main;
+
+        if (floatingCompanion == null)
+            floatingCompanion = FindObjectOfType<FloatingCompanion>();
 
         if (interactUI != null)
             interactUI.SetActive(false);
@@ -58,9 +65,18 @@ public class CameraInteractor : MonoBehaviour
             {
                 if (interactables[i].worldObject == hitObj)
                 {
-                    looking = true;
-                    currentTarget = hitObj;
-                    currentEntry = interactables[i];
+                    bool canInteract = true;
+                    if (interactables[i].requireSecondDialogue)
+                    {
+                        canInteract = floatingCompanion != null && floatingCompanion.HasSeenSecondDialogue;
+                    }
+
+                    if (canInteract)
+                    {
+                        looking = true;
+                        currentTarget = hitObj;
+                        currentEntry = interactables[i];
+                    }
                     break;
                 }
             }

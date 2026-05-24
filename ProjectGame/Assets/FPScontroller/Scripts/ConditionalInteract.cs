@@ -13,6 +13,7 @@ public class ConditionalInteract : MonoBehaviour
 
     [Header("Condition")]
     public GameObject dependentObject;
+    public GameObject requiredObject;
 
     [Header("Results")]
     public GameObject uiObjectToEnable;     
@@ -30,12 +31,18 @@ public class ConditionalInteract : MonoBehaviour
     public Image fadeImage;
     public float imageFadeTime = 1f;
 
+    [Header("Restore")]
+    public float restoreDelay = 10f;
+    public GameObject restoreObjectToEnable;
+    public GameObject alternativeUIObject;
+
     [Header("Objects To Switch")]
     public GameObject playerObject;
     public GameObject roverObject;
 
     private Coroutine uiCoroutine;
     private Coroutine lightCoroutine;
+    private Coroutine restoreCoroutine;
 
     private bool interactionLocked = false;
 
@@ -88,11 +95,14 @@ public class ConditionalInteract : MonoBehaviour
         {
             if (hit.collider.transform.root.gameObject == gameObject)
             {
-                looking = true;
-
-                if (Input.GetKeyDown(KeyCode.E))
+                if (requiredObject == null || requiredObject.activeSelf)
                 {
-                    Interact();
+                    looking = true;
+
+                    if (Input.GetKeyDown(KeyCode.E))
+                    {
+                        Interact();
+                    }
                 }
             }
         }
@@ -103,6 +113,23 @@ public class ConditionalInteract : MonoBehaviour
 
     void Interact()
     {
+        if (requiredObject != null && !requiredObject.activeSelf)
+            return;
+
+        if (restoreObjectToEnable != null && restoreObjectToEnable.activeSelf)
+        {
+            if (alternativeUIObject != null)
+            {
+                alternativeUIObject.SetActive(true);
+
+                if (uiCoroutine != null)
+                    StopCoroutine(uiCoroutine);
+
+                uiCoroutine = StartCoroutine(DisableUIAfterTime(alternativeUIObject));
+            }
+            return;
+        }
+
         if (dependentObject == null)
             return;
 
@@ -115,7 +142,7 @@ public class ConditionalInteract : MonoBehaviour
                 if (uiCoroutine != null)
                     StopCoroutine(uiCoroutine);
 
-                uiCoroutine = StartCoroutine(DisableUIAfterTime());
+                uiCoroutine = StartCoroutine(DisableUIAfterTime(uiObjectToEnable));
             }
         }
         else
@@ -125,21 +152,28 @@ public class ConditionalInteract : MonoBehaviour
 
             dependentObject.SetActive(false);
 
+            if (requiredObject != null)
+                requiredObject.SetActive(false);
+
             interactionLocked = true;
 
             if (lightCoroutine != null)
                 StopCoroutine(lightCoroutine);
 
+            if (restoreCoroutine != null)
+                StopCoroutine(restoreCoroutine);
+
             lightCoroutine = StartCoroutine(FadeLights());
+            restoreCoroutine = StartCoroutine(RestoreResultsAfterDelay());
         }
     }
 
-    IEnumerator DisableUIAfterTime()
+    IEnumerator DisableUIAfterTime(GameObject uiToDisable)
     {
         yield return new WaitForSeconds(uiDisplayTime);
 
-        if (uiObjectToEnable != null)
-            uiObjectToEnable.SetActive(false);
+        if (uiToDisable != null)
+            uiToDisable.SetActive(false);
     }
 
     IEnumerator FadeLights()
@@ -183,15 +217,66 @@ public class ConditionalInteract : MonoBehaviour
         StartCoroutine(TransitionSequence());
     }
 
+    IEnumerator FadeLightsToZero()
+    {
+        float time = 0f;
+
+        float[] startIntensities = new float[spotLights.Length];
+
+        for (int i = 0; i < spotLights.Length; i++)
+        {
+            if (spotLights[i] != null)
+                startIntensities[i] = spotLights[i].intensity;
+        }
+
+        while (time < lightFadeTime)
+        {
+            time += Time.deltaTime;
+            float t = time / lightFadeTime;
+
+            for (int i = 0; i < spotLights.Length; i++)
+            {
+                if (spotLights[i] != null)
+                {
+                    spotLights[i].intensity = Mathf.Lerp(
+                        startIntensities[i],
+                        0f,
+                        t
+                    );
+                }
+            }
+
+            yield return null;
+        }
+
+        for (int i = 0; i < spotLights.Length; i++)
+        {
+            if (spotLights[i] != null)
+                spotLights[i].intensity = 0f;
+        }
+    }
+
+    IEnumerator RestoreResultsAfterDelay()
+    {
+        yield return new WaitForSeconds(restoreDelay);
+
+        if (restoreObjectToEnable != null)
+            restoreObjectToEnable.SetActive(true);
+
+        interactionLocked = false;
+
+        if (lightCoroutine != null)
+            StopCoroutine(lightCoroutine);
+
+        lightCoroutine = StartCoroutine(FadeLightsToZero());
+    }
+
     IEnumerator TransitionSequence()
     {
         if (fadeImage == null)
             yield break;
 
         float time = 0f;
-
-        if (worldObjectToEnable != null)
-            worldObjectToEnable.SetActive(false);
 
         while (time < imageFadeTime)
         {

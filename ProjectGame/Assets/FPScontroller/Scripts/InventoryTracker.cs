@@ -19,6 +19,9 @@ public class InventoryTracker : MonoBehaviour
     public GameObject[] capacitors = new GameObject[2];
     public GameObject voltageRegulator;
 
+    [Header("Completion")]
+    public GameObject completionObject;
+
     private int transformerCount;
     private int diodeCount;
     private int capacitorCount;
@@ -33,6 +36,9 @@ public class InventoryTracker : MonoBehaviour
 
         if (crosshair != null)
             crosshair.SetActive(false);
+
+        if (completionObject != null)
+            completionObject.SetActive(false);
 
         UpdateUI();
     }
@@ -120,6 +126,7 @@ public class InventoryTracker : MonoBehaviour
             crosshair.SetActive(false);
 
         UpdateUI();
+        CheckCompletion();
     }
 
     bool IsInArray(GameObject obj, GameObject[] array)
@@ -141,5 +148,14 @@ public class InventoryTracker : MonoBehaviour
             $"Diodes         {diodeCount}/4\n" +
             $"Capacitors   {capacitorCount}/2\n" +
             $"V. regulator  {regulatorCount}/1";
+    }
+
+    void CheckCompletion()
+    {
+        if (transformerCount == 1 && diodeCount == 4 && capacitorCount == 2 && regulatorCount == 1)
+        {
+            if (completionObject != null && !completionObject.activeSelf)
+                completionObject.SetActive(true);
+        }
     }
 }

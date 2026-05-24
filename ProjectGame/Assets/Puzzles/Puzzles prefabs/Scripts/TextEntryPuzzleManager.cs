@@ -19,7 +19,6 @@ public class TextEntryPuzzleManager : MonoBehaviour
 
     [Header("Physical text panel")]
     public TMP_Text inputDisplayText;
-    public TMP_Text resultText;
     public TMP_Text promptText;
 
     [Header("Indicators")]
@@ -27,6 +26,9 @@ public class TextEntryPuzzleManager : MonoBehaviour
     public GameObject wrongIndicator;
     public GameObject alreadySolvedIndicator;
     public float indicatorDisplayTime = 2f;
+
+    [Header("Success")]
+    public Collider successCollider;
 
     private Coroutine indicatorCoroutine;
     private string currentCorrectAnswer = "";
@@ -126,6 +128,9 @@ public class TextEntryPuzzleManager : MonoBehaviour
         puzzleSolved = false;
         isTyping = false;
 
+        if (successCollider != null)
+            successCollider.enabled = false;
+
         UpdateInputDisplay();
     }
 
@@ -133,7 +138,7 @@ public class TextEntryPuzzleManager : MonoBehaviour
     {
         if (puzzleSolved)
         {
-            ShowResultOnly("Puzzle solved");
+            ShowInputOnly();
             ShowIndicator(alreadySolvedIndicator);
             return;
         }
@@ -158,7 +163,7 @@ public class TextEntryPuzzleManager : MonoBehaviour
     {
         if (puzzleSolved)
         {
-            ShowResultOnly("Puzzle already solved.");
+            ShowInputOnly();
             return;
         }
 
@@ -168,16 +173,19 @@ public class TextEntryPuzzleManager : MonoBehaviour
         if (playerAnswer == currentCorrectAnswer)
         {
             puzzleSolved = true;
-            ShowResultOnly("You are right!");
             Debug.Log("You are right!");
             ShowIndicator(rightIndicator);
+
+            if (successCollider != null)
+                successCollider.enabled = true;
         }
         else
         {
-            ShowResultOnly("Wrong answer!");
             Debug.Log("Wrong answer!");
             ShowIndicator(wrongIndicator);
         }
+
+        ShowInputOnly();
     }
 
     void HideAllIndicators()
@@ -237,9 +245,6 @@ public class TextEntryPuzzleManager : MonoBehaviour
 
         if (inputDisplayText != null)
             inputDisplayText.gameObject.SetActive(false);
-
-        if (resultText != null)
-            resultText.gameObject.SetActive(false);
     }
 
     void ShowInputOnly()
@@ -251,24 +256,6 @@ public class TextEntryPuzzleManager : MonoBehaviour
         {
             inputDisplayText.gameObject.SetActive(true);
             inputDisplayText.text = currentInput;
-        }
-
-        if (resultText != null)
-            resultText.gameObject.SetActive(false);
-    }
-
-    void ShowResultOnly(string message)
-    {
-        if (promptText != null)
-            promptText.gameObject.SetActive(false);
-
-        if (inputDisplayText != null)
-            inputDisplayText.gameObject.SetActive(false);
-
-        if (resultText != null)
-        {
-            resultText.gameObject.SetActive(true);
-            resultText.text = message;
         }
     }
 }
