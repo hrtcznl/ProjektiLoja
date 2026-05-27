@@ -79,6 +79,36 @@ public class FloatingCompanion : MonoBehaviour
         "Right...",
         "Good. Let’s finish what they started. (End dialogue)"
     };
+    public GameObject fourthDialogueTrigger; // Enable this object to trigger the fourth dialogue after it becomes active
+    public List<string> fourthRobotLines = new List<string>
+    {
+        "J: The refinement process is complete. Your fuel reserves are now sufficient for interplanetary travel.",
+        "P: Then I can finally leave this place.",
+        "J: Negative. Your ship’s primary engine was critically damaged during the crash on Cydonia. The fuel alone will not be enough.",
+        "P: So I still need an engine...",
+        "J: Correct. You should be able to find one on the Storage Room.",
+        "P: Guess this planet isn’t done with me yet.",
+        "J: Captain Vance... thank you.",
+        "P: For what?",
+        "J: You completed the work this facility was built for. Dr. House would have wanted the research to survive.",
+        "P: Maybe now it finally will.",
+        "J: Safe travels, Captain.",
+        "P: Goodbye, Jarvis."
+    };
+    public List<string> fourthPlayerResponses = new List<string>
+    {
+        "Then I can finally leave this place.",
+        "Negative. Your ship’s primary engine was critically damaged during the crash on Cydonia. The fuel alone will not be enough.",
+        "So I still need an engine...",
+        "Correct. You should be able to find one on the Storage Room.",
+        "Guess this planet isn’t done with me yet.",
+        "Captain Vance... thank you.",
+        "For what?",
+        "You completed the work this facility was built for. Dr. House would have wanted the research to survive.",
+        "Maybe now it finally will.",
+        "Safe travels, Captain.",
+        "Goodbye, Jarvis."
+    };
     public List<string> introRobotLines = new List<string>
     {
         "Oh, welcome back Dr.House! It has\nbeen a while since we talked!",
@@ -132,6 +162,10 @@ public class FloatingCompanion : MonoBehaviour
     private bool isThirdDialogueActive = false;
     private bool isThirdDialoguePaused = false;
     private int thirdLineIndex = 0;
+    private bool hasSeenFourthDialogue = false;
+    private bool isFourthDialogueActive = false;
+    private bool isFourthDialoguePaused = false;
+    private int fourthLineIndex = 0;
     private Rigidbody rb;
     private bool isActive = false;
     private bool isInDialogue = false;
@@ -312,10 +346,12 @@ public class FloatingCompanion : MonoBehaviour
                 if (dialogueUI != null)
                 {
                     followWaitForInteraction = false;
-                    if (isThirdDialoguePaused)
+                    if (isFourthDialoguePaused)
+                        ResumeFourthDialogue();
+                    else if (!hasSeenFourthDialogue && hasSeenIntro && fourthDialogueTrigger != null && fourthDialogueTrigger.activeSelf)
+                        StartFourthDialogue();
+                    else if (isThirdDialoguePaused)
                         ResumeThirdDialogue();
-                    else if (isSecondDialoguePaused)
-                        ResumeSecondDialogue();
                     else if (!hasSeenThirdDialogue && hasSeenIntro && thirdDialogueTrigger != null && thirdDialogueTrigger.activeSelf)
                         StartThirdDialogue();
                     else if (!hasSeenSecondDialogue && hasSeenIntro && secondDialogueTrigger != null && secondDialogueTrigger.activeSelf)
@@ -741,6 +777,114 @@ public class FloatingCompanion : MonoBehaviour
         EnableBackButton(false);
     }
 
+    void StartFourthDialogue()
+    {
+        if (dialogueUI == null || isInDialogue)
+            return;
+
+        if (fourthRobotLines == null || fourthRobotLines.Count == 0)
+        {
+            FinishFourthDialogue();
+            return;
+        }
+
+        isInDialogue = true;
+        isFourthDialogueActive = true;
+        fourthLineIndex = 0;
+        ShowDialogue(fourthRobotLines[fourthLineIndex]);
+
+        SetIntroUIActive(true);
+        EnableTaskButtons(false);
+        EnableBackButton(false);
+
+        if (playerResponseButtonText != null)
+        {
+            if (fourthPlayerResponses != null && fourthPlayerResponses.Count > 0)
+                playerResponseButtonText.text = fourthPlayerResponses[0];
+            else
+                playerResponseButtonText.text = "Goodbye, Jarvis.";
+        }
+    }
+
+    void OnFourthPlayerResponseButtonClicked()
+    {
+        if (!isFourthDialogueActive)
+            return;
+
+        if (fourthRobotLines == null || fourthRobotLines.Count == 0)
+        {
+            FinishFourthDialogue();
+            return;
+        }
+
+        if (fourthLineIndex >= fourthRobotLines.Count - 1)
+        {
+            FinishFourthDialogue();
+            return;
+        }
+
+        fourthLineIndex++;
+        ShowDialogue(fourthRobotLines[fourthLineIndex]);
+
+        if (playerResponseButtonText != null)
+        {
+            if (fourthPlayerResponses != null && fourthLineIndex < fourthPlayerResponses.Count)
+                playerResponseButtonText.text = fourthPlayerResponses[fourthLineIndex];
+            else
+                playerResponseButtonText.text = "Goodbye, Jarvis.";
+        }
+
+        if (fourthLineIndex >= fourthRobotLines.Count - 1)
+        {
+            playerResponseButtonText.text = "Goodbye, Jarvis.";
+        }
+    }
+
+    void SkipFourthDialogue()
+    {
+        if (!isFourthDialogueActive)
+            return;
+
+        FinishFourthDialogue();
+    }
+
+    void ResumeFourthDialogue()
+    {
+        if (!isFourthDialoguePaused)
+            return;
+
+        isFourthDialogueActive = true;
+        isFourthDialoguePaused = false;
+        isInDialogue = true;
+        ShowDialogue(fourthRobotLines[fourthLineIndex]);
+
+        SetIntroUIActive(true);
+
+        if (playerResponseButtonText != null)
+        {
+            if (fourthPlayerResponses != null && fourthLineIndex < fourthPlayerResponses.Count)
+                playerResponseButtonText.text = fourthPlayerResponses[fourthLineIndex];
+            else
+                playerResponseButtonText.text = "Goodbye, Jarvis.";
+        }
+
+        if (fourthLineIndex >= fourthRobotLines.Count - 1)
+        {
+            playerResponseButtonText.text = "Goodbye, Jarvis.";
+        }
+    }
+
+    void FinishFourthDialogue()
+    {
+        hasSeenFourthDialogue = true;
+        isFourthDialogueActive = false;
+        currentDialogueKey = "default";
+        ShowDialogue(dialogues[currentDialogueKey]);
+        SetIntroUIActive(false);
+        EnableTaskButtons(true);
+        EnableBackButton(false);
+    }
+
     void HandleDialogueClose()
     {
         if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(interactKey))
@@ -836,7 +980,7 @@ public class FloatingCompanion : MonoBehaviour
         dialogues = new Dictionary<string, string>
         {
             { "default", "Hey there. Tell me if you need\nhelp with anything:\n\n\n\n\n" },
-            { "task_1", "Read left to right: the first two colors are digits, the third color tells how many zeros to add (multiplier), and the last band shows accuracy in percentage. Refer to the color chart in the energy room." },
+            { "task_1", "Read left to right: the first three colors are digits, the fourth color tells how many zeros to add (multiplier), and the last band shows accuracy in percentage. Refer to the color chart in the energy room." },
             { "task_2", "Add up resistance differently depending on how they are connected: in series, you just add all resistor values; in parallel, you add the reciprocals (1/R) of each resistor, then take the reciprocal of that result." },
             { "task_3", "Start from 32 bits: the CIDR number tells how many bits are set to 1, so fill that many 1s from left to right, then split into 4 groups of 8 bits and convert each group to decimal to get the subnet mask." },
             { "task_4", "Start from the inputs and go step by step through the circuit: a NOT gate flips the value, an AND gate outputs 1 only if all its inputs are 1, and an OR gate outputs 1 if at least one input is 1. Follow the connections to the output." },
@@ -872,7 +1016,9 @@ public class FloatingCompanion : MonoBehaviour
 
     void OnResponseButtonClicked()
     {
-        if (isThirdDialogueActive)
+        if (isFourthDialogueActive)
+            OnFourthPlayerResponseButtonClicked();
+        else if (isThirdDialogueActive)
             OnThirdPlayerResponseButtonClicked();
         else if (isSecondDialogueActive)
             OnSecondPlayerResponseButtonClicked();
@@ -882,7 +1028,9 @@ public class FloatingCompanion : MonoBehaviour
 
     void OnSkipDialogueButtonClicked()
     {
-        if (isThirdDialogueActive)
+        if (isFourthDialogueActive)
+            SkipFourthDialogue();
+        else if (isThirdDialogueActive)
             SkipThirdDialogue();
         else if (isSecondDialogueActive)
             SkipSecondDialogue();
