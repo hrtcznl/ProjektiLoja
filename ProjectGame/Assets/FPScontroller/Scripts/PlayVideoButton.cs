@@ -13,7 +13,10 @@ public class PlayVideoButton : MonoBehaviour
     public bool restartVideo = true;
 
     [Header("End Settings")]
-    public bool disableWhenFinished = true;
+    public bool disableWhenFinished = false;
+    public GameObject disableOnEndObject1;
+    public GameObject disableOnEndObject2;
+    public KeyCode skipKey = KeyCode.M;
 
     private Button button;
 
@@ -36,6 +39,14 @@ public class PlayVideoButton : MonoBehaviour
         if (videoPlayer != null)
         {
             videoPlayer.loopPointReached += OnVideoFinished;
+        }
+    }
+
+    void Update()
+    {
+        if (videoPlayer != null && videoPlayer.isPlaying && Input.GetKeyDown(skipKey))
+        {
+            StopVideo();
         }
     }
 
@@ -63,11 +74,36 @@ public class PlayVideoButton : MonoBehaviour
         videoPlayer.Play();
     }
 
+    private void StopVideo()
+    {
+        if (videoPlayer == null)
+        {
+            return;
+        }
+
+        if (videoPlayer.isPlaying)
+        {
+            videoPlayer.Stop();
+        }
+
+        OnVideoFinished(videoPlayer);
+    }
+
     private void OnVideoFinished(VideoPlayer vp)
     {
         if (disableWhenFinished && videoObject != null)
         {
             videoObject.SetActive(false);
+        }
+
+        if (disableOnEndObject1 != null)
+        {
+            disableOnEndObject1.SetActive(false);
+        }
+
+        if (disableOnEndObject2 != null)
+        {
+            disableOnEndObject2.SetActive(false);
         }
     }
 }

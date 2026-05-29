@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class TriggerObjectSwitcher : MonoBehaviour
@@ -14,6 +15,16 @@ public class TriggerObjectSwitcher : MonoBehaviour
     [Header("Additional Trigger Colliders")]
     [SerializeField] private Collider[] additionalTriggerColliders;
 
+    [Header("First-Time Enable Objects")]
+    [Tooltip("Objects enabled only the first time the player enters. Will be disabled after the duration.")]
+    public GameObject[] firstTimeEnableObjects;
+
+    [Tooltip("Duration (seconds) that the first-time objects stay enabled before being disabled")]
+    public float firstTimeEnableDuration = 5f;
+
+    private bool firstTimeTriggered = false;
+    private Coroutine firstTimeCoroutine = null;
+
     private int triggerActivationCount = 0;
 
     private void Start()
@@ -24,6 +35,8 @@ public class TriggerObjectSwitcher : MonoBehaviour
 
         SetObjects(disableObjects, true);
         SetObjects(enableObjects, false);
+        // Ensure first-time objects start disabled
+        SetObjects(firstTimeEnableObjects, false);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -54,6 +67,15 @@ public class TriggerObjectSwitcher : MonoBehaviour
         {
             SetObjects(disableObjects, false);
             SetObjects(enableObjects, true);
+            // If this is the first-ever entry, enable the first-time objects and start timer
+            if (!firstTimeTriggered && firstTimeEnableObjects != null && firstTimeEnableObjects.Length > 0)
+            {
+                firstTimeTriggered = true;
+                SetObjects(firstTimeEnableObjects, true);
+                if (firstTimeCoroutine != null)
+                    StopCoroutine(firstTimeCoroutine);
+                firstTimeCoroutine = StartCoroutine(DisableFirstTimeObjectsAfterDelay());
+            }
         }
     }
 
@@ -82,5 +104,12 @@ public class TriggerObjectSwitcher : MonoBehaviour
                 obj.SetActive(state);
             }
         }
+    }
+
+    private IEnumerator DisableFirstTimeObjectsAfterDelay()
+    {
+        yield return new WaitForSeconds(firstTimeEnableDuration);
+        SetObjects(firstTimeEnableObjects, false);
+        firstTimeCoroutine = null;
     }
 }
